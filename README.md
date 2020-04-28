@@ -1,4 +1,7 @@
 # react-native-zoom-us-sdk
+Implementation of native Android and iOS zoom.us SDK for React Native
+
+# :exclamation: :rotating_light: :exclamation: This repository is still under development and not yet ready for use.
 
 ## Getting started
 
