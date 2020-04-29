@@ -12,6 +12,8 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableMap;
 
 import us.zoom.sdk.InMeetingService;
+import us.zoom.sdk.JoinMeetingOptions;
+import us.zoom.sdk.JoinMeetingParams;
 import us.zoom.sdk.MeetingError;
 import us.zoom.sdk.MeetingService;
 import us.zoom.sdk.MeetingServiceListener;
@@ -79,9 +81,8 @@ public class ZoomUsSdkModule extends ReactContextBaseJavaModule
 
     @ReactMethod
     public void startMeeting(final String jwtAccessToken, final String zoomToken,
-                             final String zoomAccessToken, final String userId,
-                             final String meetingNo, final String displayName,
-                             final Promise promise) {
+                             final String zoomAccessToken, final String meetingNo,
+                             final String userId, final String displayName, final Promise promise) {
         Log.v(TAG, "startMeeting");
         mZoomSDK = ZoomSDK.getInstance();
 
@@ -154,6 +155,84 @@ public class ZoomUsSdkModule extends ReactContextBaseJavaModule
             }
         } catch (Exception ex) {
             promise.reject("ERR_UNEXPECTED_EXCEPTION", ex);
+            meetingService.removeListener(this);
+            meetingService = null;
+            meetingPromise = null;
+        }
+    }
+
+    @ReactMethod
+    public void joinMeeting(final String meetingNo, final String meetingPassword,
+                            final String displayName, final Promise promise) {
+        Log.v(TAG, "joinMeeting");
+        mZoomSDK = ZoomSDK.getInstance();
+
+        if (!mZoomSDK.isInitialized()) {
+            promise.reject(
+                    "ERR_ZOOM_JOIN", "ZoomSDK has not been initialized successfully"
+            );
+
+            return;
+        }
+
+        meetingService = mZoomSDK.getMeetingService();
+
+        if (meetingService == null) {
+            promise.reject(
+                    "ERR_ZOOM_JOIN", "Cannot get meeting service"
+            );
+
+            return;
+        }
+
+        if (meetingService.getMeetingStatus() != MeetingStatus.MEETING_STATUS_IDLE) {
+            meetingService.returnToMeeting(reactContext.getCurrentActivity());
+            promise.reject("ERR_ZOOM_IN_MEETING", "Already in meeting");
+            meetingService.removeListener(this);
+            meetingService = null;
+            return;
+        }
+
+        try {
+            JoinMeetingOptions opts = new JoinMeetingOptions();
+            opts.no_invite = true;
+            opts.no_meeting_end_message = true;
+            opts.no_dial_in_via_phone = true;
+            opts.no_dial_out_to_phone = true;
+            opts.no_disconnect_audio = true;
+            opts.no_share = true;
+
+            opts.meeting_views_options = MeetingViewsOptions.NO_TEXT_MEETING_ID
+                    + MeetingViewsOptions.NO_TEXT_PASSWORD + MeetingViewsOptions.NO_BUTTON_MORE
+                    + MeetingViewsOptions.NO_BUTTON_PARTICIPANTS
+                    + MeetingViewsOptions.NO_BUTTON_AUDIO + MeetingViewsOptions.NO_BUTTON_VIDEO;
+
+            JoinMeetingParams params = new JoinMeetingParams();
+            params.displayName = displayName;
+            params.meetingNo = meetingNo;
+            params.password = meetingPassword;
+
+            int joinMeetingResult = meetingService.joinMeetingWithParams(
+                    reactContext.getCurrentActivity(), params, opts
+            );
+
+            Log.i(TAG, "joinMeeting: joinMeetingResult=" + joinMeetingResult);
+
+            if (joinMeetingResult == MeetingError.MEETING_ERROR_SUCCESS) {
+                promise.resolve("Joined meeting successfully");
+            } else {
+                promise.reject(
+                        "ERR_ZOOM_JOIN",
+                        "joinMeeting: errorCode=" + joinMeetingResult
+                );
+            }
+
+            meetingService.removeListener(this);
+            meetingService = null;
+        } catch (Exception ex) {
+            promise.reject("ERR_UNEXPECTED_EXCEPTION", ex);
+            meetingService.removeListener(this);
+            meetingService = null;
         }
     }
 
@@ -301,6 +380,7 @@ public class ZoomUsSdkModule extends ReactContextBaseJavaModule
             );
 
             map.putString("meetingPassword", inMeetingService.getMeetingPassword());
+            Log.i(TAG, "Zoom meeting data: " + map);
             meetingPromise.resolve(map);
         }
 
