@@ -11,7 +11,14 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableMap;
 
+import java.util.Arrays;
+import java.util.List;
+
+import us.zoom.sdk.InMeetingAudioController;
+import us.zoom.sdk.InMeetingChatMessage;
+import us.zoom.sdk.InMeetingEventHandler;
 import us.zoom.sdk.InMeetingService;
+import us.zoom.sdk.InMeetingServiceListener;
 import us.zoom.sdk.JoinMeetingOptions;
 import us.zoom.sdk.JoinMeetingParams;
 import us.zoom.sdk.MeetingError;
@@ -27,13 +34,15 @@ import us.zoom.sdk.ZoomSDKInitParams;
 import us.zoom.sdk.ZoomSDKInitializeListener;
 
 public class ZoomUsSdkModule extends ReactContextBaseJavaModule
-        implements ZoomSDKInitializeListener, MeetingServiceListener {
+        implements ZoomSDKInitializeListener, MeetingServiceListener, InMeetingServiceListener {
     private static final String TAG = "ZoomUsSdk";
     private final ReactApplicationContext reactContext;
     private ZoomSDK mZoomSDK;
     private Promise initializePromise;
     private MeetingService meetingService;
     private Promise meetingPromise;
+    private InMeetingService inMeetingService;
+    private Promise leavePromise;
 
     ZoomUsSdkModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -275,6 +284,16 @@ public class ZoomUsSdkModule extends ReactContextBaseJavaModule
             return;
         }
 
+        inMeetingService = mZoomSDK.getInMeetingService();
+
+        if (inMeetingService == null) {
+            promise.reject(
+                    "ERR_ZOOM_LEAVE", "Cannot get in meeting service"
+            );
+
+            return;
+        }
+
         meetingService = mZoomSDK.getMeetingService();
 
         if (meetingService == null) {
@@ -285,10 +304,9 @@ public class ZoomUsSdkModule extends ReactContextBaseJavaModule
             return;
         }
 
-        meetingService.leaveCurrentMeeting(true);
-        promise.resolve("Done leaving current meeting");
-        meetingService.removeListener(this);
-        meetingService = null;
+        leavePromise = promise;
+        inMeetingService.addListener(this);
+        meetingService.leaveCurrentMeeting(false);
     }
 
     @Override
@@ -342,6 +360,10 @@ public class ZoomUsSdkModule extends ReactContextBaseJavaModule
                     "Error: errorCode=" + errorCode + ", internalErrorCode="
                             + internalErrorCode
             );
+
+            meetingService.removeListener(this);
+            meetingService = null;
+            meetingPromise = null;
         } else if (meetingStatus == MeetingStatus.MEETING_STATUS_INMEETING) {
             mZoomSDK = ZoomSDK.getInstance();
 
@@ -357,7 +379,7 @@ public class ZoomUsSdkModule extends ReactContextBaseJavaModule
                 return;
             }
 
-            InMeetingService inMeetingService = mZoomSDK.getInMeetingService();
+            inMeetingService = mZoomSDK.getInMeetingService();
 
             if (inMeetingService == null) {
                 meetingPromise.reject(
@@ -379,10 +401,187 @@ public class ZoomUsSdkModule extends ReactContextBaseJavaModule
             map.putString("meetingPassword", inMeetingService.getMeetingPassword());
             Log.i(TAG, "Zoom meeting data: " + map);
             meetingPromise.resolve(map);
+            meetingService.removeListener(this);
+            meetingService = null;
+            inMeetingService.removeListener(this);
+            inMeetingService = null;
+            meetingPromise = null;
         }
+    }
 
-        meetingService.removeListener(this);
-        meetingService = null;
-        meetingPromise = null;
+    @Override
+    public void onMeetingNeedPasswordOrDisplayName(boolean needPassword, boolean needDisplayName,
+                                                   InMeetingEventHandler inMeetingEventHandler) {
+        Log.i(TAG, "onMeetingNeedPasswordOrDisplayName: needPassword=" + needPassword
+                + ", needDisplayName=" + needDisplayName + ", inMeetingEventHandler="
+                + inMeetingEventHandler);
+    }
+
+    @Override
+    public void onWebinarNeedRegister() {
+        Log.i(TAG, "onWebinarNeedRegister");
+    }
+
+    @Override
+    public void onJoinWebinarNeedUserNameAndEmail(InMeetingEventHandler inMeetingEventHandler) {
+        Log.i(TAG, "onJoinWebinarNeedUserNameAndEmail: inMeetingEventHandler="
+                + inMeetingEventHandler);
+    }
+
+    @Override
+    public void onMeetingNeedColseOtherMeeting(InMeetingEventHandler inMeetingEventHandler) {
+        Log.i(TAG, "onMeetingNeedColseOtherMeeting: inMeetingEventHandler="
+                + inMeetingEventHandler);
+    }
+
+    @Override
+    public void onMeetingFail(int errorCode, int internalErrorCode) {
+        Log.e(TAG, "onMeetingFail: errorCode=" + errorCode + ", internalErrorCode="
+                + internalErrorCode);
+    }
+
+    @Override
+    public void onMeetingLeaveComplete(long ret) {
+        Log.i(TAG, "onMeetingLeaveComplete: ret=" + ret);
+
+        if (leavePromise != null) {
+            leavePromise.resolve("Done leaving current meeting");
+
+            if (inMeetingService != null) {
+                inMeetingService.removeListener(this);
+                inMeetingService = null;
+            }
+
+            if (meetingService != null) {
+                meetingService.removeListener(this);
+                meetingService = null;
+            }
+
+            leavePromise = null;
+        }
+    }
+
+    @Override
+    public void onMeetingUserJoin(List<Long> userList) {
+        Log.i(TAG, "onMeetingUserJoin: userList=" + userList);
+    }
+
+    @Override
+    public void onMeetingUserLeave(List<Long> userList) {
+        Log.i(TAG, "onMeetingUserLeave: userList=" + userList);
+    }
+
+    @Override
+    public void onMeetingUserUpdated(long userId) {
+        Log.i(TAG, "onMeetingUserUpdated: userId=" + userId);
+    }
+
+    @Override
+    public void onMeetingHostChanged(long userId) {
+        Log.i(TAG, "onMeetingHostChanged: userId=" + userId);
+    }
+
+    @Override
+    public void onMeetingCoHostChanged(long userId) {
+        Log.i(TAG, "onMeetingCoHostChanged: userId=" + userId);
+    }
+
+    @Override
+    public void onActiveVideoUserChanged(long userId) {
+        Log.i(TAG, "onActiveVideoUserChanged: userId=" + userId);
+    }
+
+    @Override
+    public void onActiveSpeakerVideoUserChanged(long userId) {
+        Log.i(TAG, "onActiveSpeakerVideoUserChanged: userId=" + userId);
+    }
+
+    @Override
+    public void onSpotlightVideoChanged(boolean on) {
+        Log.i(TAG, "onSpotlightVideoChanged: on=" + on);
+    }
+
+    @Override
+    public void onUserVideoStatusChanged(long userId) {
+        Log.i(TAG, "onUserVideoStatusChanged: userId=" + userId);
+    }
+
+    @Override
+    public void onUserNetworkQualityChanged(long userId) {
+        Log.i(TAG, "onUserNetworkQualityChanged: userId=" + userId);
+    }
+
+    @Override
+    public void onMicrophoneStatusError(
+            InMeetingAudioController.MobileRTCMicrophoneError mobileRTCMicrophoneError) {
+        Log.e(TAG, "onMicrophoneStatusError: mobileRTCMicrophoneError="
+                + mobileRTCMicrophoneError);
+    }
+
+    @Override
+    public void onUserAudioStatusChanged(long userId) {
+        Log.i(TAG, "onUserAudioStatusChanged: userId=" + userId);
+    }
+
+    @Override
+    public void onHostAskUnMute(long userId) {
+        Log.i(TAG, "onHostAskUnMute: privilege=" + userId);
+    }
+
+    @Override
+    public void onHostAskStartVideo(long userId) {
+        Log.i(TAG, "onHostAskStartVideo: userId=" + userId);
+    }
+
+    @Override
+    public void onUserAudioTypeChanged(long userId) {
+        Log.i(TAG, "onUserAudioTypeChanged: userId=" + userId);
+    }
+
+    @Override
+    public void onMyAudioSourceTypeChanged(int type) {
+        Log.i(TAG, "onMyAudioSourceTypeChanged: type=" + type);
+    }
+
+    @Override
+    public void onLowOrRaiseHandStatusChanged(long userId, boolean isRaiseHand) {
+        Log.i(TAG, "onLowOrRaiseHandStatusChanged: userId=" + userId + ", isRaiseHand="
+                + isRaiseHand);
+    }
+
+    @Override
+    public void onMeetingSecureKeyNotification(byte[] key) {
+        Log.i(TAG, "onMeetingSecureKeyNotification: key=" + Arrays.toString(key));
+    }
+
+    @Override
+    public void onChatMessageReceived(InMeetingChatMessage inMeetingChatMessage) {
+        Log.i(TAG, "onChatMessageReceived: inMeetingChatMessage=" + inMeetingChatMessage);
+    }
+
+    @Override
+    public void onSilentModeChanged(boolean inSilentMode) {
+        Log.i(TAG, "onSilentModeChanged: inSilentMode=" + inSilentMode);
+    }
+
+    @Override
+    public void onFreeMeetingReminder(boolean isHost, boolean canUpgrade, boolean isFirstGift) {
+        Log.i(TAG, "onFreeMeetingReminder: isHost=" + isHost + ", canUpgrade=" + canUpgrade
+                + ", isFirstGift=" + isFirstGift);
+    }
+
+    @Override
+    public void onMeetingActiveVideo(long userId) {
+        Log.i(TAG, "onMeetingActiveVideo: userId=" + userId);
+    }
+
+    @Override
+    public void onSinkAttendeeChatPriviledgeChanged(int privilege) {
+        Log.i(TAG, "onSinkAttendeeChatPriviledgeChanged: privilege=" + privilege);
+    }
+
+    @Override
+    public void onSinkAllowAttendeeChatNotification(int privilege) {
+        Log.i(TAG, "onSinkAllowAttendeeChatNotification: privilege=" + privilege);
     }
 }
