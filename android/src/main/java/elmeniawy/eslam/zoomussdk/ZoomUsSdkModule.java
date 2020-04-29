@@ -104,7 +104,6 @@ public class ZoomUsSdkModule extends ReactContextBaseJavaModule
         }
 
         if (meetingService.getMeetingStatus() != MeetingStatus.MEETING_STATUS_IDLE) {
-            meetingService.returnToMeeting(reactContext.getCurrentActivity());
             promise.reject("ERR_ZOOM_IN_MEETING", "Already in meeting");
             meetingService.removeListener(this);
             meetingService = null;
@@ -185,7 +184,6 @@ public class ZoomUsSdkModule extends ReactContextBaseJavaModule
         }
 
         if (meetingService.getMeetingStatus() != MeetingStatus.MEETING_STATUS_IDLE) {
-            meetingService.returnToMeeting(reactContext.getCurrentActivity());
             promise.reject("ERR_ZOOM_IN_MEETING", "Already in meeting");
             meetingService.removeListener(this);
             meetingService = null;
