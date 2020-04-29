@@ -1,5 +1,5 @@
 # React Native zoom.us SDK
-Implementation of native Android and iOS zoom.us SDK for React Native
+Implementation of native Android and iOS zoom.us SDK for React Native.
 
 # :exclamation: :rotating_light: :exclamation: This repository is still under development and not yet ready for use.
 
@@ -45,9 +45,10 @@ $ cd ios/ && pod install
 ```
 
 ## Usage
+
+### Import the library
+
+
 ```javascript
 import ZoomUsSdk from 'react-native-zoom-us-sdk';
-
-// TODO: What to do with the module?
-ZoomUsSdk;
 ```
