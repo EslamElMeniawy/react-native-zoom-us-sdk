@@ -38,7 +38,6 @@ public class ZoomUsSdkModule extends ReactContextBaseJavaModule
     ZoomUsSdkModule(ReactApplicationContext reactContext) {
         super(reactContext);
         this.reactContext = reactContext;
-        mZoomSDK = ZoomSDK.getInstance();
     }
 
     @NonNull
