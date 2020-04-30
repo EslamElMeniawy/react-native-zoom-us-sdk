@@ -2,7 +2,7 @@
 
 Implementation of native Android and iOS zoom.us SDK for React Native.
 
-# :exclamation: :rotating_light: :exclamation: This repository is still under development and not yet ready for use.
+# :rotating_light: iOS part is still under development only the Android part is working for now.
 
 ## Getting started
 
@@ -51,6 +51,93 @@ $ cd ios/ && pod install
 
 ```javascript
 import ZoomUsSdk from 'react-native-zoom-us-sdk';
+```
+
+### Initialize Zoom SDK
+
+```javascript
+try {
+  const initializeResult = await ZoomUsSdk.initializeZoom(
+    'SdkApiKey',
+    'SdkApiSecret',
+    'WebDomain',
+  );
+
+  console.log(initializeResult);
+} catch (exception) {
+  console.error('Error initialize zoom', exception);
+}
+```
+
+### Start Meeting
+
+```javascript
+try {
+  const startResult = await ZoomUsSdk.startMeeting(
+    'JwtAccessToken',
+    'ZoomToken',
+    'ZoomAccessToken',
+    'MeetingNnumber',
+    'UserId',
+    'DisplayName',
+  );
+
+  console.log(startResult);
+} catch (exception) {
+  if (exception.code === 'ERR_ZOOM_IN_MEETING') {
+    // User already in a meeting.
+    // You can either use ZoomUsSdk.returnToCurrentMeeting()
+    // Or ZoomUsSdk.leaveCurrentMeeting()
+    // Or let the user decide.
+  } else {
+    console.error('Error start meeting', exception);
+  }
+}
+```
+
+### Join Meeting
+
+```javascript
+try {
+  const joinResult = await ZoomUsSdk.joinMeeting(
+    'MeetingNnumber', // This value is returened in start meeting result.
+    'MeetingPassword', // This value is returened in start meeting result.
+    'DisplayName',
+  );
+
+  console.log(joinResult);
+} catch (exception) {
+  if (exception.code === 'ERR_ZOOM_IN_MEETING') {
+    // User already in a meeting.
+    // You can either use ZoomUsSdk.returnToCurrentMeeting()
+    // Or ZoomUsSdk.leaveCurrentMeeting()
+    // Or let the user decide.
+  } else {
+    console.error('Error join meeting', exception);
+  }
+}
+```
+
+### Return To Current Meeting
+
+```javascript
+try {
+  const returnToMeetingResult = await ZoomUsSdk.returnToCurrentMeeting();
+  console.log(returnToMeetingResult);
+} catch (exception) {
+  console.error('Error returning to current meeting', exception);
+}
+```
+
+### Leave Current Meeting
+
+```javascript
+try {
+  const leaveMeetingResult = await ZoomUsSdk.leaveCurrentMeeting();
+  console.log(leaveMeetingResult);
+} catch (exception) {
+  console.error('Error leaving current meeting', exception);
+}
 ```
 
 ## Example
