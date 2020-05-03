@@ -34,7 +34,7 @@ or npm:
 $ npm install --save https://github.com/EslamElMeniawy/react-native-zoom-us-sdk
 ```
 
-### 3. Add Zoom iOS SDK
+### 3. Add native zoom.us iOS SDK
 
 Move the iOS `lib` folder downloaded in first step to
 
