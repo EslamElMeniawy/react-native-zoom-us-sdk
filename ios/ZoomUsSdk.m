@@ -5,12 +5,16 @@
 {
     RCTPromiseResolveBlock initializePromiseResolve;
     RCTPromiseRejectBlock initializePromiseReject;
+    RCTPromiseResolveBlock meetingPromiseResolve;
+    RCTPromiseRejectBlock meetingPromiseReject;
 }
 
 - (instancetype)init {
     if (self = [super init]) {
         initializePromiseResolve = nil;
         initializePromiseReject = nil;
+        meetingPromiseResolve = nil;
+        meetingPromiseReject = nil;
     }
     return self;
 }
@@ -81,7 +85,67 @@ RCT_EXPORT_METHOD(
                   )
 {
     NSLog(@"startMeeting");
-    reject(@"ERR_ZOOM_START",  @"Executing startMeeting: iOS part of this library is not implemented yet", [NSError errorWithDomain:@"us.zoom.sdk" code:-1 userInfo:nil]);
+    
+    if (![[MobileRTC sharedRTC] isRTCAuthorized]) {
+        reject(@"ERR_ZOOM_START",  @"Executing startMeeting: ZoomSDK has not been initialized successfully", [NSError errorWithDomain:@"us.zoom.sdk" code:-1 userInfo:nil]);
+        return;
+    }
+    
+    MobileRTCMeetingService *meetingService = [[MobileRTC sharedRTC] getMeetingService];
+    
+    if (meetingService) {
+        if ([meetingService getMeetingState] != MobileRTCMeetingState_Idle) {
+            reject(@"ERR_ZOOM_IN_MEETING",  @"Executing startMeeting: Already in meeting", [NSError errorWithDomain:@"us.zoom.sdk" code:-1 userInfo:nil]);
+            
+            return;
+        }
+        
+        @try {
+            meetingPromiseResolve = resolve;
+            meetingPromiseReject = reject;
+            
+            meetingService.delegate = self;
+            
+            MobileRTCMeetingSettings *meetingSettings = [[MobileRTC sharedRTC] getMeetingSettings];
+            [meetingSettings setAutoConnectInternetAudio:true];
+            [meetingSettings disableCallIn:true];
+            [meetingSettings disableCallOut:true];
+            meetingSettings.meetingTitleHidden = true;
+            meetingSettings.meetingPasswordHidden = true;
+            meetingSettings.meetingAudioHidden = true;
+            meetingSettings.meetingInviteHidden = true;
+            meetingSettings.meetingParticipantHidden = true;
+            meetingSettings.meetingShareHidden = true;
+            meetingSettings.meetingMoreHidden = true;
+            
+            MobileRTCMeetingStartParam4WithoutLoginUser * params = [[MobileRTCMeetingStartParam4WithoutLoginUser alloc]init];
+            params.userName = displayName;
+            params.meetingNumber = meetingNo;
+            params.userID = userId;
+            params.userType = MobileRTCUserType_APIUser;
+            params.zak = zoomAccessToken;
+            params.userToken = zoomToken;
+            
+            MobileRTCMeetError startMeetingResult = [meetingService startMeetingWithStartParam:params];
+            NSLog(@"startMeeting: startMeetingResult=%d", startMeetingResult);
+            
+            if (startMeetingResult != MobileRTCMeetError_Success) {
+                reject(
+                       @"ERR_ZOOM_START",
+                       [NSString stringWithFormat:@"Error: %d", startMeetingResult],
+                       [NSError errorWithDomain:@"us.zoom.sdk" code:startMeetingResult userInfo:nil]
+                       );
+                
+                meetingService.delegate = nil;
+                meetingPromiseResolve = nil;
+                meetingPromiseReject = nil;
+            }
+        } @catch (NSError *ex) {
+            reject(@"ERR_UNEXPECTED_EXCEPTION", @"Executing startMeeting", ex);
+        }
+    } else {
+        reject(@"ERR_ZOOM_START",  @"Executing startMeeting: No meetingService", [NSError errorWithDomain:@"us.zoom.sdk" code:-1 userInfo:nil]);
+    }
 }
 
 RCT_EXPORT_METHOD(
@@ -125,14 +189,55 @@ RCT_EXPORT_METHOD(
         initializePromiseResolve(@"Initialize Zoom SDK successfully.");
     } else {
         initializePromiseReject(
-          @"ERR_ZOOM_INITIALIZATION",
-          [NSString stringWithFormat:@"Error: %d", returnValue],
-          [NSError errorWithDomain:@"us.zoom.sdk" code:returnValue userInfo:nil]
-        );
+                                @"ERR_ZOOM_INITIALIZATION",
+                                [NSString stringWithFormat:@"Error: %d", returnValue],
+                                [NSError errorWithDomain:@"us.zoom.sdk" code:returnValue userInfo:nil]
+                                );
     }
     
     initializePromiseResolve = nil;
     initializePromiseReject = nil;
+}
+
+- (void)onMeetingStateChange:(MobileRTCMeetingState)state {
+    NSLog(@"onMeetingStateChange: meetingState=%d", state);
+    
+    if (!meetingPromiseResolve) {
+        return;
+    }
+    
+    if (state == MobileRTCMeetingState_InMeeting) {
+        NSString *meetingNo = [[MobileRTCInviteHelper sharedInstance] ongoingMeetingNumber];
+        NSString *meetingPass = [[MobileRTCInviteHelper sharedInstance] rawMeetingPassword];
+        
+        NSDictionary *dictData = @{
+            @"meetingNumber":meetingNo,
+            @"meetingPassword":meetingPass
+        };
+        
+        NSLog(@"Zoom meeting data: %@", dictData);
+        meetingPromiseResolve(dictData);
+        
+        meetingPromiseResolve = nil;
+        meetingPromiseReject = nil;
+    }
+}
+
+- (void)onMeetingError:(MobileRTCMeetError)error message:(NSString *)message {
+    NSLog(@"onMeetingError: errorCode=%d, message=%@", error, message);
+    
+    if (!meetingPromiseResolve) {
+        return;
+    }
+    
+    meetingPromiseReject(
+                         @"ERR_ZOOM_MEETING",
+                         [NSString stringWithFormat:@"Error: %d, internalErrorCode=%@", error, message],
+                         [NSError errorWithDomain:@"us.zoom.sdk" code:error userInfo:nil]
+                         );
+    
+    meetingPromiseResolve = nil;
+    meetingPromiseReject = nil;
 }
 
 @end
