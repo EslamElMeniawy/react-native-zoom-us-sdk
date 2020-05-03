@@ -10,7 +10,15 @@ Implementation of native Android and iOS zoom.us SDK for React Native.
 
 This is an implementation of the native Android and iOS zoom.us SDK so before you start you need to install the native Android and iOS SDK first to your project.
 
-Follow [Zoom Developer Documentation](https://marketplace.zoom.us/docs/guides) to create a developer account and install native Android and iOS SDK in your project.
+Follow [Zoom Developer Documentation](https://marketplace.zoom.us/docs/guides) to create a developer account and application.
+
+#### Android
+
+Follow [Zoom Android SDK Documentation](https://marketplace.zoom.us/docs/sdk/native-sdks/android) to install native Android SDK in your project.
+
+#### iOS
+
+Follow [Zoom iOS SDK Documentation](https://marketplace.zoom.us/docs/sdk/native-sdks/iOS) to just download the library and don't add it to project.
 
 ### 2. Install the library
 
@@ -26,7 +34,15 @@ or npm:
 $ npm install --save https://github.com/EslamElMeniawy/react-native-zoom-us-sdk
 ```
 
-### 3. Link
+### 3. Add Zoom iOS SDK
+
+Move the iOS `lib` folder downloaded in first step to
+
+```
+projectDir/node_modules/react-native-zoom-us-sdk/ios
+```
+
+### 4. Link
 
 - **React Native 0.60+**
 
