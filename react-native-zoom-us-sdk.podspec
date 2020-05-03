@@ -16,6 +16,9 @@ Pod::Spec.new do |s|
   s.source_files = "ios/**/*.{h,m,swift}"
   s.requires_arc = true
 
+  s.vendored_frameworks = 'ios/lib/MobileRTC.framework', 'ios/lib/MobileRTCScreenShare.framework'
+  s.resource = 'ios/lib/MobileRTCResources.bundle'
+
   s.dependency "React"
 end
 
