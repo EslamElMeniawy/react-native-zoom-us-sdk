@@ -10,6 +10,7 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.ReadableMap;
 
 import java.util.Arrays;
 import java.util.List;
@@ -90,7 +91,8 @@ public class ZoomUsSdkModule extends ReactContextBaseJavaModule
     @ReactMethod
     public void startMeeting(final String jwtAccessToken, final String zoomToken,
                              final String zoomAccessToken, final String meetingNo,
-                             final String userId, final String displayName, final Promise promise) {
+                             final String userId, final String displayName,
+                             final ReadableMap meetingOptions, final Promise promise) {
         Log.v(TAG, "startMeeting");
         mZoomSDK = ZoomSDK.getInstance();
 
@@ -124,17 +126,41 @@ public class ZoomUsSdkModule extends ReactContextBaseJavaModule
             meetingService.addListener(this);
 
             StartMeetingOptions opts = new StartMeetingOptions();
-            opts.no_invite = true;
-            opts.no_meeting_end_message = true;
-            opts.no_dial_in_via_phone = true;
-            opts.no_dial_out_to_phone = true;
-            opts.no_disconnect_audio = true;
-            opts.no_share = true;
+            opts.no_disconnect_audio = meetingOptions.getBoolean("autoConnectAudio");
+            opts.no_dial_in_via_phone = meetingOptions.getBoolean("disableCallIn");
+            opts.no_dial_out_to_phone = meetingOptions.getBoolean("disableCallOut");
+            opts.no_invite = meetingOptions.getBoolean("meetingInviteHidden");
+            opts.no_share = meetingOptions.getBoolean("meetingShareHidden");
 
-            opts.meeting_views_options = MeetingViewsOptions.NO_TEXT_MEETING_ID
-                    + MeetingViewsOptions.NO_TEXT_PASSWORD + MeetingViewsOptions.NO_BUTTON_MORE
-                    + MeetingViewsOptions.NO_BUTTON_PARTICIPANTS
-                    + MeetingViewsOptions.NO_BUTTON_AUDIO + MeetingViewsOptions.NO_BUTTON_VIDEO;
+            int meetingViewOptions = 0;
+
+            if (meetingOptions.getBoolean("meetingIdHidden")) {
+                meetingViewOptions += MeetingViewsOptions.NO_TEXT_MEETING_ID;
+            }
+
+            if (meetingOptions.getBoolean("meetingPasswordHidden")) {
+                meetingViewOptions += MeetingViewsOptions.NO_TEXT_PASSWORD;
+            }
+
+            if (meetingOptions.getBoolean("meetingAudioHidden")) {
+                meetingViewOptions += MeetingViewsOptions.NO_BUTTON_AUDIO;
+            }
+
+            if (meetingOptions.getBoolean("meetingVideoHidden")) {
+                meetingViewOptions += MeetingViewsOptions.NO_BUTTON_VIDEO;
+            }
+
+            if (meetingOptions.getBoolean("meetingParticipantHidden")) {
+                meetingViewOptions += MeetingViewsOptions.NO_BUTTON_PARTICIPANTS;
+            }
+
+            if (meetingOptions.getBoolean("meetingMoreHidden")) {
+                meetingViewOptions += MeetingViewsOptions.NO_BUTTON_MORE;
+            }
+
+            if (meetingViewOptions > 0) {
+                opts.meeting_views_options = meetingViewOptions;
+            }
 
             StartMeetingParamsWithoutLogin params = new StartMeetingParamsWithoutLogin();
             params.displayName = displayName;
@@ -170,7 +196,8 @@ public class ZoomUsSdkModule extends ReactContextBaseJavaModule
 
     @ReactMethod
     public void joinMeeting(final String meetingNo, final String meetingPassword,
-                            final String displayName, final Promise promise) {
+                            final String displayName, final ReadableMap meetingOptions,
+                            final Promise promise) {
         Log.v(TAG, "joinMeeting");
         mZoomSDK = ZoomSDK.getInstance();
 
@@ -201,17 +228,41 @@ public class ZoomUsSdkModule extends ReactContextBaseJavaModule
 
         try {
             JoinMeetingOptions opts = new JoinMeetingOptions();
-            opts.no_invite = true;
-            opts.no_meeting_end_message = true;
-            opts.no_dial_in_via_phone = true;
-            opts.no_dial_out_to_phone = true;
-            opts.no_disconnect_audio = true;
-            opts.no_share = true;
+            opts.no_disconnect_audio = meetingOptions.getBoolean("autoConnectAudio");
+            opts.no_dial_in_via_phone = meetingOptions.getBoolean("disableCallIn");
+            opts.no_dial_out_to_phone = meetingOptions.getBoolean("disableCallOut");
+            opts.no_invite = meetingOptions.getBoolean("meetingInviteHidden");
+            opts.no_share = meetingOptions.getBoolean("meetingShareHidden");
 
-            opts.meeting_views_options = MeetingViewsOptions.NO_TEXT_MEETING_ID
-                    + MeetingViewsOptions.NO_TEXT_PASSWORD + MeetingViewsOptions.NO_BUTTON_MORE
-                    + MeetingViewsOptions.NO_BUTTON_PARTICIPANTS
-                    + MeetingViewsOptions.NO_BUTTON_AUDIO + MeetingViewsOptions.NO_BUTTON_VIDEO;
+            int meetingViewOptions = 0;
+
+            if (meetingOptions.getBoolean("meetingIdHidden")) {
+                meetingViewOptions += MeetingViewsOptions.NO_TEXT_MEETING_ID;
+            }
+
+            if (meetingOptions.getBoolean("meetingPasswordHidden")) {
+                meetingViewOptions += MeetingViewsOptions.NO_TEXT_PASSWORD;
+            }
+
+            if (meetingOptions.getBoolean("meetingAudioHidden")) {
+                meetingViewOptions += MeetingViewsOptions.NO_BUTTON_AUDIO;
+            }
+
+            if (meetingOptions.getBoolean("meetingVideoHidden")) {
+                meetingViewOptions += MeetingViewsOptions.NO_BUTTON_VIDEO;
+            }
+
+            if (meetingOptions.getBoolean("meetingParticipantHidden")) {
+                meetingViewOptions += MeetingViewsOptions.NO_BUTTON_PARTICIPANTS;
+            }
+
+            if (meetingOptions.getBoolean("meetingMoreHidden")) {
+                meetingViewOptions += MeetingViewsOptions.NO_BUTTON_MORE;
+            }
+
+            if (meetingViewOptions > 0) {
+                opts.meeting_views_options = meetingViewOptions;
+            }
 
             JoinMeetingParams params = new JoinMeetingParams();
             params.displayName = displayName;

@@ -80,6 +80,7 @@ RCT_EXPORT_METHOD(
                   withMeetingNo: (NSString *)meetingNo
                   withUserId: (NSString *)userId
                   withDisplayName: (NSString *)displayName
+                  withMeetingOptions: (NSDictionary *) meetingOptions
                   withResolve: (RCTPromiseResolveBlock)resolve
                   withReject: (RCTPromiseRejectBlock)reject
                   )
@@ -108,17 +109,17 @@ RCT_EXPORT_METHOD(
             meetingService.delegate = self;
             
             MobileRTCMeetingSettings *meetingSettings = [[MobileRTC sharedRTC] getMeetingSettings];
-            [meetingSettings setAutoConnectInternetAudio:true];
-            [meetingSettings disableCallIn:true];
-            [meetingSettings disableCallOut:true];
-            meetingSettings.meetingTitleHidden = true;
-            meetingSettings.meetingPasswordHidden = true;
-            meetingSettings.meetingAudioHidden = true;
-            meetingSettings.meetingVideoHidden = true;
-            meetingSettings.meetingInviteHidden = true;
-            meetingSettings.meetingParticipantHidden = true;
-            meetingSettings.meetingShareHidden = true;
-            meetingSettings.meetingMoreHidden = true;
+            [meetingSettings setAutoConnectInternetAudio:meetingOptions[@"autoConnectAudio"]];
+            [meetingSettings disableCallIn:meetingOptions[@"disableCallIn"]];
+            [meetingSettings disableCallOut:meetingOptions[@"disableCallOut"]];
+            meetingSettings.meetingInviteHidden = meetingOptions[@"meetingInviteHidden"];
+            meetingSettings.meetingShareHidden = meetingOptions[@"meetingShareHidden"];
+            meetingSettings.meetingTitleHidden = meetingOptions[@"meetingIdHidden"];
+            meetingSettings.meetingPasswordHidden = meetingOptions[@"meetingPasswordHidden"];
+            meetingSettings.meetingAudioHidden = meetingOptions[@"meetingAudioHidden"];
+            meetingSettings.meetingVideoHidden = meetingOptions[@"meetingVideoHidden"];
+            meetingSettings.meetingParticipantHidden = meetingOptions[@"meetingParticipantHidden"];
+            meetingSettings.meetingMoreHidden = meetingOptions[@"meetingMoreHidden"];
             
             MobileRTCMeetingStartParam4WithoutLoginUser * params = [[MobileRTCMeetingStartParam4WithoutLoginUser alloc]init];
             params.userName = displayName;
@@ -154,6 +155,7 @@ RCT_EXPORT_METHOD(
                   joinMeeting: (NSString *)meetingNo
                   withMeetingPassword: (NSString *)meetingPassword
                   withDisplayName: (NSString *)displayName
+                  withMeetingOptions: (NSDictionary *) meetingOptions
                   withResolve: (RCTPromiseResolveBlock)resolve
                   withReject: (RCTPromiseRejectBlock)reject
                   )
@@ -182,17 +184,17 @@ RCT_EXPORT_METHOD(
             meetingService.delegate = self;
             
             MobileRTCMeetingSettings *meetingSettings = [[MobileRTC sharedRTC] getMeetingSettings];
-            [meetingSettings setAutoConnectInternetAudio:true];
-            [meetingSettings disableCallIn:true];
-            [meetingSettings disableCallOut:true];
-            meetingSettings.meetingTitleHidden = true;
-            meetingSettings.meetingPasswordHidden = true;
-            meetingSettings.meetingAudioHidden = true;
-            meetingSettings.meetingVideoHidden = true;
-            meetingSettings.meetingInviteHidden = true;
-            meetingSettings.meetingParticipantHidden = true;
-            meetingSettings.meetingShareHidden = true;
-            meetingSettings.meetingMoreHidden = true;
+            [meetingSettings setAutoConnectInternetAudio:meetingOptions[@"autoConnectAudio"]];
+            [meetingSettings disableCallIn:meetingOptions[@"disableCallIn"]];
+            [meetingSettings disableCallOut:meetingOptions[@"disableCallOut"]];
+            meetingSettings.meetingInviteHidden = meetingOptions[@"meetingInviteHidden"];
+            meetingSettings.meetingShareHidden = meetingOptions[@"meetingShareHidden"];
+            meetingSettings.meetingTitleHidden = meetingOptions[@"meetingIdHidden"];
+            meetingSettings.meetingPasswordHidden = meetingOptions[@"meetingPasswordHidden"];
+            meetingSettings.meetingAudioHidden = meetingOptions[@"meetingAudioHidden"];
+            meetingSettings.meetingVideoHidden = meetingOptions[@"meetingVideoHidden"];
+            meetingSettings.meetingParticipantHidden = meetingOptions[@"meetingParticipantHidden"];
+            meetingSettings.meetingMoreHidden = meetingOptions[@"meetingMoreHidden"];
             
             NSDictionary *paramDict = @{
                 kMeetingParam_Username: displayName,
