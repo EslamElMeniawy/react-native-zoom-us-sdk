@@ -228,7 +228,26 @@ RCT_EXPORT_METHOD(
                   )
 {
     NSLog(@"returnToCurrentMeeting");
-    reject(@"ERR_ZOOM_RETURN",  @"Executing returnToCurrentMeeting: iOS part of this library is not implemented yet", [NSError errorWithDomain:@"us.zoom.sdk" code:-1 userInfo:nil]);
+    
+    if (![[MobileRTC sharedRTC] isRTCAuthorized]) {
+        reject(@"ERR_ZOOM_RETURN",  @"Executing returnToCurrentMeeting: ZoomSDK has not been initialized successfully", [NSError errorWithDomain:@"us.zoom.sdk" code:-1 userInfo:nil]);
+        
+        return;
+    }
+    
+    MobileRTCMeetingService *meetingService = [[MobileRTC sharedRTC] getMeetingService];
+    
+    if (meetingService) {
+        BOOL returnResult = [meetingService showMobileRTCMeeting:^(void){
+            resolve(@"Done returning to current meeting");
+        }];
+        
+        if(!returnResult) {
+            reject(@"ERR_ZOOM_RETURN",  @"Executing returnToCurrentMeeting", [NSError errorWithDomain:@"us.zoom.sdk" code:-1 userInfo:nil]);
+        }
+    } else {
+        reject(@"ERR_ZOOM_RETURN",  @"Executing returnToCurrentMeeting: No meetingService", [NSError errorWithDomain:@"us.zoom.sdk" code:-1 userInfo:nil]);
+    }
 }
 
 RCT_EXPORT_METHOD(
