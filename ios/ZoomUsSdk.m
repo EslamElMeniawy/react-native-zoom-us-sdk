@@ -113,6 +113,7 @@ RCT_EXPORT_METHOD(
             meetingSettings.meetingTitleHidden = true;
             meetingSettings.meetingPasswordHidden = true;
             meetingSettings.meetingAudioHidden = true;
+            meetingSettings.meetingVideoHidden = true;
             meetingSettings.meetingInviteHidden = true;
             meetingSettings.meetingParticipantHidden = true;
             meetingSettings.meetingShareHidden = true;
@@ -157,7 +158,66 @@ RCT_EXPORT_METHOD(
                   )
 {
     NSLog(@"joinMeeting");
-    reject(@"ERR_ZOOM_JOIN",  @"Executing joinMeeting: iOS part of this library is not implemented yet", [NSError errorWithDomain:@"us.zoom.sdk" code:-1 userInfo:nil]);
+    
+    if (![[MobileRTC sharedRTC] isRTCAuthorized]) {
+        reject(@"ERR_ZOOM_JOIN",  @"Executing joinMeeting: ZoomSDK has not been initialized successfully", [NSError errorWithDomain:@"us.zoom.sdk" code:-1 userInfo:nil]);
+        return;
+    }
+    
+    MobileRTCMeetingService *meetingService = [[MobileRTC sharedRTC] getMeetingService];
+    
+    if (meetingService) {
+        if ([meetingService getMeetingState] != MobileRTCMeetingState_Idle) {
+            reject(@"ERR_ZOOM_IN_MEETING",  @"Executing joinMeeting: Already in meeting", [NSError errorWithDomain:@"us.zoom.sdk" code:-1 userInfo:nil]);
+            
+            return;
+        }
+        
+        @try {
+            meetingPromiseResolve = resolve;
+            meetingPromiseReject = reject;
+            
+            meetingService.delegate = self;
+            
+            MobileRTCMeetingSettings *meetingSettings = [[MobileRTC sharedRTC] getMeetingSettings];
+            [meetingSettings setAutoConnectInternetAudio:true];
+            [meetingSettings disableCallIn:true];
+            [meetingSettings disableCallOut:true];
+            meetingSettings.meetingTitleHidden = true;
+            meetingSettings.meetingPasswordHidden = true;
+            meetingSettings.meetingAudioHidden = true;
+            meetingSettings.meetingVideoHidden = true;
+            meetingSettings.meetingInviteHidden = true;
+            meetingSettings.meetingParticipantHidden = true;
+            meetingSettings.meetingShareHidden = true;
+            meetingSettings.meetingMoreHidden = true;
+            
+            NSDictionary *paramDict = @{
+                kMeetingParam_Username: displayName,
+                kMeetingParam_MeetingNumber: meetingNo,
+                kMeetingParam_MeetingPassword:meetingPassword
+            };
+            
+            MobileRTCMeetError joinMeetingResult = [meetingService joinMeetingWithDictionary:paramDict];
+            NSLog(@"joinMeeting: joinMeetingResult=%d", joinMeetingResult);
+            
+            if (joinMeetingResult != MobileRTCMeetError_Success) {
+                reject(
+                       @"ERR_ZOOM_JOIN",
+                       [NSString stringWithFormat:@"Error: %d", joinMeetingResult],
+                       [NSError errorWithDomain:@"us.zoom.sdk" code:joinMeetingResult userInfo:nil]
+                       );
+                
+                meetingService.delegate = nil;
+                meetingPromiseResolve = nil;
+                meetingPromiseReject = nil;
+            }
+        } @catch (NSError *ex) {
+            reject(@"ERR_UNEXPECTED_EXCEPTION", @"Executing startMeeting", ex);
+        }
+    } else {
+        reject(@"ERR_ZOOM_JOIN",  @"Executing joinMeeting: No meetingService", [NSError errorWithDomain:@"us.zoom.sdk" code:-1 userInfo:nil]);
+    }
 }
 
 RCT_EXPORT_METHOD(
