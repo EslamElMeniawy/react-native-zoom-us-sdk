@@ -88,6 +88,7 @@ RCT_EXPORT_METHOD(
     
     if (![[MobileRTC sharedRTC] isRTCAuthorized]) {
         reject(@"ERR_ZOOM_START",  @"Executing startMeeting: ZoomSDK has not been initialized successfully", [NSError errorWithDomain:@"us.zoom.sdk" code:-1 userInfo:nil]);
+        
         return;
     }
     
@@ -161,6 +162,7 @@ RCT_EXPORT_METHOD(
     
     if (![[MobileRTC sharedRTC] isRTCAuthorized]) {
         reject(@"ERR_ZOOM_JOIN",  @"Executing joinMeeting: ZoomSDK has not been initialized successfully", [NSError errorWithDomain:@"us.zoom.sdk" code:-1 userInfo:nil]);
+        
         return;
     }
     
@@ -235,7 +237,21 @@ RCT_EXPORT_METHOD(
                   )
 {
     NSLog(@"leaveCurrentMeeting");
-    reject(@"ERR_ZOOM_LEAVE",  @"Executing leaveCurrentMeeting: iOS part of this library is not implemented yet", [NSError errorWithDomain:@"us.zoom.sdk" code:-1 userInfo:nil]);
+    
+    if (![[MobileRTC sharedRTC] isRTCAuthorized]) {
+        reject(@"ERR_ZOOM_LEAVE",  @"Executing leaveCurrentMeeting: ZoomSDK has not been initialized successfully", [NSError errorWithDomain:@"us.zoom.sdk" code:-1 userInfo:nil]);
+        
+        return;
+    }
+    
+    MobileRTCMeetingService *meetingService = [[MobileRTC sharedRTC] getMeetingService];
+    
+    if (meetingService) {
+        [meetingService leaveMeetingWithCmd:LeaveMeetingCmd_Leave];
+        resolve(@"Done leaving current meeting");
+    } else {
+        reject(@"ERR_ZOOM_LEAVE",  @"Executing leaveCurrentMeeting: No meetingService", [NSError errorWithDomain:@"us.zoom.sdk" code:-1 userInfo:nil]);
+    }
 }
 
 - (void)onMobileRTCAuthReturn:(MobileRTCAuthError)returnValue {
