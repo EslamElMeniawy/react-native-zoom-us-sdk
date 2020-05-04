@@ -2,8 +2,6 @@
 
 Implementation of native Android and iOS zoom.us SDK for React Native.
 
-# :rotating_light: iOS part is still under development only the Android part is working for now.
-
 ## Getting started
 
 ### 1. Install native zoom.us SDK
@@ -96,6 +94,20 @@ try {
     'MeetingNnumber',
     'UserId',
     'DisplayName',
+    // Meeting options.
+    {
+      autoConnectAudio: true,
+      disableCallIn: true,
+      disableCallOut: true,
+      meetingInviteHidden: true,
+      meetingShareHidden: true,
+      meetingIdHidden: true,
+      meetingPasswordHidden: true,
+      meetingAudioHidden: true,
+      meetingVideoHidden: true,
+      meetingParticipantHidden: true,
+      meetingMoreHidden: true,
+    },
   );
 
   console.log(startResult);
@@ -119,6 +131,20 @@ try {
     'MeetingNnumber', // This value is returened in start meeting result.
     'MeetingPassword', // This value is returened in start meeting result.
     'DisplayName',
+    // Meeting options.
+    {
+      autoConnectAudio: true,
+      disableCallIn: true,
+      disableCallOut: true,
+      meetingInviteHidden: true,
+      meetingShareHidden: true,
+      meetingIdHidden: true,
+      meetingPasswordHidden: true,
+      meetingAudioHidden: true,
+      meetingVideoHidden: true,
+      meetingParticipantHidden: true,
+      meetingMoreHidden: true,
+    },
   );
 
   console.log(joinResult);
